@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  @apply bg-white text-slate-900 antialiased;
+}
+
+.dark body {
+  @apply bg-slate-950 text-slate-100;
+}
+
+/* Custom scrollbar for result panes */
+.scroll-area::-webkit-scrollbar { width: 8px; height: 8px; }
+.scroll-area::-webkit-scrollbar-track { background: transparent; }
+.scroll-area::-webkit-scrollbar-thumb { background: rgba(100,116,139,.4); border-radius: 4px; }
+.scroll-area::-webkit-scrollbar-thumb:hover { background: rgba(100,116,139,.6); }
+
+/* Email body iframe-like rendering container */
+.email-body {
+  @apply text-sm leading-relaxed;
+  word-break: break-word;
+}
+.email-body img { max-width: 100%; height: auto; }
+.email-body a { @apply text-brand-600 dark:text-brand-400 underline; }
+.email-body table { max-width: 100%; border-collapse: collapse; }
+.email-body pre { white-space: pre-wrap; word-break: break-word; }
+.email-body blockquote {
+  @apply border-l-2 border-slate-300 dark:border-slate-700 pl-3 my-2 text-slate-600 dark:text-slate-400;
+}
