@@ -1,0 +1,57 @@
+// Prisma schema for Gmail Search Dashboard
+// Using SQLite for zero-config local dev. To use Postgres, change `provider`
+// to "postgresql" and update DATABASE_URL in .env.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String          @id @default(cuid())
+  email          String          @unique
+  name           String?
+  image          String?
+  createdAt      DateTime        @default(now())
+  savedSearches  SavedSearch[]
+  searchHistory  SearchHistory[]
+  preferences    UserPreference?
+}
+
+model SavedSearch {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  query     String
+  filters   String   // JSON-serialized filter object
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model SearchHistory {
+  id        String   @id @default(cuid())
+  userId    String
+  query     String
+  filters   String   // JSON-serialized filter object
+  resultCnt Int      @default(0)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model UserPreference {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  theme         String   @default("system") // "light" | "dark" | "system"
+  viewMode      String   @default("messages") // "messages" | "threads"
+  pageSize      Int      @default(25)
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
