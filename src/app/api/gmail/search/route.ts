@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { searchMessages, aggregateDomains } from "@/lib/gmail";
 import { buildGmailQuery } from "@/lib/query-builder";
 import { rateLimit } from "@/lib/rate-limit";
-import { prisma } from "@/lib/prisma";
 import type { SearchFilters } from "@/types";
 import { ensureSessionUser, handleGmailError, requireSession } from "@/lib/api-helpers";
 
@@ -53,6 +52,7 @@ export async function POST(req: NextRequest) {
     if (body.saveToHistory !== false && !body.pageToken && q.trim().length > 0) {
       try {
         await ensureSessionUser(auth);
+        const { prisma } = await import("@/lib/prisma");
         await prisma.searchHistory.create({
           data: {
             userId: auth.userId,

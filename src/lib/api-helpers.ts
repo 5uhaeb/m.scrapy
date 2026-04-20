@@ -1,7 +1,6 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 
 /**
  * Returns { session, accessToken, userId } for an authenticated request,
@@ -63,6 +62,7 @@ export async function ensureSessionUser(auth: {
   const email = auth.session.user?.email;
   if (!email) throw new Error("Session missing user email");
 
+  const { prisma } = await import("@/lib/prisma");
   await prisma.user.upsert({
     where: { id: auth.userId },
     update: {
