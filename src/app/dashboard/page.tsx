@@ -102,8 +102,13 @@ export default function DashboardPage() {
           }),
         });
         if (!r.ok) {
-          const body = await r.json().catch(() => ({}));
-          throw new Error(body.error ?? r.statusText);
+          const contentType = r.headers.get("content-type") ?? "";
+          const detail = contentType.includes("application/json")
+            ? (await r.json().catch(() => ({}))).error
+            : await r.text().catch(() => "");
+          throw new Error(
+            `Search failed (${r.status})${detail ? `: ${detail}` : r.statusText ? `: ${r.statusText}` : ""}`
+          );
         }
         const data: SearchAPIResponse = await r.json();
         if (reqId !== latestReq.current) return; // race: a newer request is in flight

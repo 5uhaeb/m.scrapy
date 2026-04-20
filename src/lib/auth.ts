@@ -1,6 +1,5 @@
 import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-import { prisma } from "@/lib/prisma";
 
 /**
  * Minimum scopes required:
@@ -99,23 +98,29 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, account, user }) {
       // Initial sign-in: `account` is present.
       if (account && user) {
-        // Persist / upsert user row in our DB.
-        const dbUser = await prisma.user.upsert({
-          where: { email: user.email! },
-          update: {
-            name: user.name ?? undefined,
-            image: user.image ?? undefined,
-          },
-          create: {
-            email: user.email!,
-            name: user.name ?? undefined,
-            image: user.image ?? undefined,
-          },
-        });
+        let userId = user.email ?? user.id;
+        try {
+          const { prisma } = await import("@/lib/prisma");
+          const dbUser = await prisma.user.upsert({
+            where: { email: user.email! },
+            update: {
+              name: user.name ?? undefined,
+              image: user.image ?? undefined,
+            },
+            create: {
+              email: user.email!,
+              name: user.name ?? undefined,
+              image: user.image ?? undefined,
+            },
+          });
+          userId = dbUser.id;
+        } catch (err) {
+          console.warn("User persistence unavailable; using email as user id", err);
+        }
 
         return {
           ...token,
-          userId: dbUser.id,
+          userId,
           accessToken: account.access_token,
           refreshToken: account.refresh_token,
           accessTokenExpires: account.expires_at

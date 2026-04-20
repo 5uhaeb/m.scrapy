@@ -44,6 +44,12 @@ function extractDomain(email: string): string {
   return at >= 0 ? email.slice(at + 1).toLowerCase() : "";
 }
 
+function toIsoDate(value: string | number | undefined): string | undefined {
+  if (value === undefined || value === "") return undefined;
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
+}
+
 // ---------- Body extraction ----------
 
 /** Recursively find the first part with a given MIME type. */
@@ -106,11 +112,10 @@ export function parseMessage(msg: gmail_v1.Schema$Message): ParsedMessage {
   const subject = getHeader(headers, "Subject");
   const dateHeader = getHeader(headers, "Date");
   const internalDate = msg.internalDate ?? undefined;
-  const date = internalDate
-    ? new Date(Number(internalDate)).toISOString()
-    : dateHeader
-    ? new Date(dateHeader).toISOString()
-    : new Date().toISOString();
+  const date =
+    toIsoDate(internalDate ? Number(internalDate) : undefined) ??
+    toIsoDate(dateHeader) ??
+    new Date().toISOString();
 
   const attachments = collectAttachments(msg.payload);
 
@@ -257,10 +262,16 @@ export async function batchGetMetadata(
       chunkResults = idsChunk.map(() => null);
     }
 
-    const filled = await Promise.all(
+    const filled = await Promise.allSettled(
       chunkResults.map((msg, index) => msg ?? getMetadataMessage(gmail, idsChunk[index]))
     );
-    results.push(...filled);
+    filled.forEach((item, index) => {
+      if (item.status === "fulfilled") {
+        results.push(item.value);
+      } else {
+        console.error("[gmail-message-fetch-error]", idsChunk[index], item.reason);
+      }
+    });
   }
 
   return results;
@@ -283,7 +294,7 @@ export async function searchMessages(
     const threads = list.data.threads ?? [];
 
     // For each thread, fetch metadata of the most recent message (last in the list).
-    const results: ParsedMessage[] = await Promise.all(
+    const settled = await Promise.allSettled(
       threads.map(async (t) => {
         const detail = await gmail.users.threads.get({
           userId: "me",
@@ -303,6 +314,11 @@ export async function searchMessages(
         return parsed;
       })
     );
+    const results = settled.flatMap((item, index) => {
+      if (item.status === "fulfilled") return [item.value];
+      console.error("[gmail-thread-fetch-error]", threads[index]?.id, item.reason);
+      return [];
+    });
 
     return {
       messages: results,

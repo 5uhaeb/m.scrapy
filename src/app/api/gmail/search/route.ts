@@ -9,36 +9,36 @@ import { ensureSessionUser, handleGmailError, requireSession } from "@/lib/api-h
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const auth = await requireSession();
-  if ("error" in auth) return auth.error;
-
-  // 30 searches / minute per user is a reasonable personal-use limit.
-  const rl = rateLimit(`search:${auth.userId}`, 30, 60_000);
-  if (!rl.ok) {
-    return NextResponse.json(
-      { error: "Too many searches. Please wait a moment." },
-      { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfter / 1000)) } }
-    );
-  }
-
-  let body: {
-    filters?: SearchFilters;
-    pageToken?: string;
-    pageSize?: number;
-    saveToHistory?: boolean;
-  };
   try {
-    body = await req.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
+    const auth = await requireSession();
+    if ("error" in auth) return auth.error;
 
-  const filters = body.filters ?? {};
-  const pageSize = Math.min(Math.max(Number(body.pageSize) || 25, 1), 100);
-  const viewMode = filters.viewMode ?? "messages";
-  const q = buildGmailQuery(filters);
+    // 30 searches / minute per user is a reasonable personal-use limit.
+    const rl = rateLimit(`search:${auth.userId}`, 30, 60_000);
+    if (!rl.ok) {
+      return NextResponse.json(
+        { error: "Too many searches. Please wait a moment." },
+        { status: 429, headers: { "Retry-After": String(Math.ceil(rl.retryAfter / 1000)) } }
+      );
+    }
 
-  try {
+    let body: {
+      filters?: SearchFilters;
+      pageToken?: string;
+      pageSize?: number;
+      saveToHistory?: boolean;
+    };
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    const filters = body.filters ?? {};
+    const pageSize = Math.min(Math.max(Number(body.pageSize) || 25, 1), 100);
+    const viewMode = filters.viewMode ?? "messages";
+    const q = buildGmailQuery(filters);
+
     const result = await searchMessages(auth.accessToken, {
       q,
       pageToken: body.pageToken,

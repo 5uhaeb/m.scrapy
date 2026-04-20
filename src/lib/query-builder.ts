@@ -41,10 +41,10 @@ export function buildGmailQuery(f: SearchFilters): string {
 
 /** Quick-chip presets — keyword shortcuts. */
 export const QUICK_CHIPS: Array<{ label: string; keywords: string }> = [
-  { label: "Invoices", keywords: "invoice OR bill OR payment" },
-  { label: "Jobs", keywords: "job OR application OR hiring OR recruiter" },
-  { label: "Receipts", keywords: "receipt OR order OR purchase" },
-  { label: "Interview", keywords: "interview OR onsite OR phone screen" },
-  { label: "Bank", keywords: "bank OR statement OR transaction OR account" },
-  { label: "University", keywords: "university OR college OR admission OR student" },
+  { label: "Invoices", keywords: "{invoice bill payment}" },
+  { label: "Jobs", keywords: "{job application hiring recruiter}" },
+  { label: "Receipts", keywords: "{receipt order purchase}" },
+  { label: "Interview", keywords: "{interview onsite \"phone screen\"}" },
+  { label: "Bank", keywords: "{bank statement transaction account}" },
+  { label: "University", keywords: "{university college admission student}" },
 ];
