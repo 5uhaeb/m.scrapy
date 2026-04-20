@@ -1,12 +1,22 @@
 "use client";
 
 import { signIn, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect } from "react";
 
 export default function LandingPage() {
+  return (
+    <Suspense fallback={null}>
+      <LandingContent />
+    </Suspense>
+  );
+}
+
+function LandingContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const authError = searchParams.get("error");
 
   useEffect(() => {
     if (status === "authenticated") router.replace("/dashboard");
@@ -56,6 +66,12 @@ export default function LandingPage() {
             </p>
           )}
 
+          {authError && (
+            <p className="mt-4 text-xs font-semibold text-accent-red">
+              {authErrorMessage(authError)}
+            </p>
+          )}
+
           <p className="mt-6 text-xs leading-5 text-ink-mute">
             By signing in you authorize this app running on your machine to call the Gmail API with your account.
           </p>
@@ -67,6 +83,19 @@ export default function LandingPage() {
       </div>
     </main>
   );
+}
+
+function authErrorMessage(error: string) {
+  if (error === "AccessDenied") {
+    return "Sign-in was denied. Check ALLOWED_EMAIL in Vercel, or leave it blank for testing.";
+  }
+  if (error === "Callback" || error === "OAuthCallback") {
+    return "Google sign-in reached MailBoard, but the callback failed. Check Vercel env vars and logs.";
+  }
+  if (error === "Configuration") {
+    return "Authentication is not configured correctly. Check NEXTAUTH_URL, NEXTAUTH_SECRET, and Google OAuth credentials.";
+  }
+  return `Sign-in failed: ${error}`;
 }
 
 function FeatureCheck({

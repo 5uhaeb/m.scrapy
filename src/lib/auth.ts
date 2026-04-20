@@ -87,7 +87,13 @@ export const authOptions: NextAuthOptions = {
     async signIn({ user }) {
       const allowed = process.env.ALLOWED_EMAIL?.trim();
       if (!allowed) return true;
-      return user.email?.toLowerCase() === allowed.toLowerCase();
+      const ok = user.email?.toLowerCase() === allowed.toLowerCase();
+      if (!ok) {
+        console.warn("[auth] sign-in denied by ALLOWED_EMAIL", {
+          attemptedEmail: user.email,
+        });
+      }
+      return ok;
     },
 
     async jwt({ token, account, user }) {
