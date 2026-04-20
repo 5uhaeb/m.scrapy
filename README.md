@@ -27,7 +27,7 @@ MailBoard is a personal API client, not a scraper or bulk data tool. It uses Goo
 | Styling | Tailwind CSS |
 | Auth | NextAuth.js + Google provider |
 | API | Official Gmail REST API via `googleapis` |
-| DB | Prisma + PostgreSQL |
+| DB | Prisma + Neon Postgres |
 | Sanitization | `isomorphic-dompurify` |
 
 ## Google Cloud Setup
@@ -42,6 +42,10 @@ MailBoard is a personal API client, not a scraper or bulk data tool. It uses Goo
 5. For local development, add:
    - Authorized JavaScript origin: `http://localhost:3000`
    - Authorized redirect URI: `http://localhost:3000/api/auth/callback/google`
+6. Before deploying, also add the production redirect URI:
+   - `https://YOUR-PRODUCTION-DOMAIN/api/auth/callback/google`
+
+Keep both localhost and production callback URLs configured. Local sign-in and deployed sign-in use different callback URLs, and both must match exactly.
 
 ## Local Setup
 
@@ -65,7 +69,7 @@ DATABASE_URL="postgresql://user:pass@host-pooler.neon.tech/neondb?sslmode=requir
 ALLOWED_EMAIL=you@gmail.com
 ```
 
-The Prisma schema is configured for PostgreSQL. If you want SQLite for a purely local throwaway setup, switch the datasource provider in `prisma/schema.prisma` to `sqlite` and use `DATABASE_URL="file:./dev.db"`.
+The Prisma schema is configured for Neon Postgres. Use the same Neon `DATABASE_URL` locally and in production to avoid database drift.
 
 ## Running
 
@@ -79,13 +83,29 @@ The Prisma schema is configured for PostgreSQL. If you want SQLite for a purely 
 
 ## Deploying To Vercel + Neon
 
-Use Neon's pooled connection string, the one with `-pooler` in the hostname. Serverless functions create many short-lived connections, and the pooler keeps those connections manageable.
+MailBoard is one full-stack Next.js app. Deploy the repository as a single Vercel project; do not split it into separate frontend and backend services.
 
-In Vercel project settings, add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, and `DATABASE_URL`. Set `NEXTAUTH_URL` to your Vercel URL with no trailing slash. Set `DATABASE_URL` to the Neon pooled string. Leave `ALLOWED_EMAIL` blank if you want test users to be able to sign in.
+Neon is the production database. Use Neon's pooled connection string, the one with `-pooler` in the hostname. Serverless functions create many short-lived connections, and the pooler keeps those connections manageable.
 
-In Google Cloud Console, add `https://<your-vercel-url>/api/auth/callback/google` to the OAuth client's Authorized redirect URIs.
+In Vercel project settings, add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `DATABASE_URL`, and optionally `ALLOWED_EMAIL`. Set `NEXTAUTH_URL` to your Vercel URL with no trailing slash. Set `DATABASE_URL` to the Neon pooled Postgres string. Leave `ALLOWED_EMAIL` blank if you want test users to be able to sign in.
+
+In Google Cloud Console, configure both redirect URIs on the same OAuth client:
+
+- `http://localhost:3000/api/auth/callback/google`
+- `https://YOUR-PRODUCTION-DOMAIN/api/auth/callback/google`
+
+The deployed app must use the production `NEXTAUTH_URL`, for example `https://your-app-name.vercel.app`.
 
 On the first Vercel deploy, if you see a Prisma connection error, redeploy once. The initial build can occasionally race the first database connection.
+
+## Deployment Checklist
+
+- Verify login works in production.
+- Verify Gmail search works.
+- Verify saving searches writes to Neon.
+- Verify history persists after refresh.
+- Verify CSV/JSON export works.
+- Verify no secrets are tracked by Git.
 
 ## Security Notes
 
