@@ -87,7 +87,7 @@ function LandingContent() {
 
 function authErrorMessage(error: string) {
   if (error === "AccessDenied") {
-    return "Sign-in was denied. Check ALLOWED_EMAIL in Vercel, or leave it blank for testing.";
+    return "Sign-in was denied. Check ALLOWED_EMAIL/ALLOWED_EMAILS in Vercel, or leave it blank for testing.";
   }
   if (error === "Callback" || error === "OAuthCallback") {
     return "Google sign-in reached MailBoard, but the callback failed. Check Vercel env vars and logs.";

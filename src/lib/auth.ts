@@ -15,6 +15,16 @@ const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/gmail.readonly",
 ].join(" ");
 
+function getAllowedEmails() {
+  const allowedEnv = process.env.ALLOWED_EMAILS ?? process.env.ALLOWED_EMAIL;
+  if (!allowedEnv?.trim()) return [];
+
+  return allowedEnv
+    .split(/[\s,;]+/)
+    .map((email) => email.trim().replace(/^['"]|['"]$/g, "").toLowerCase())
+    .filter(Boolean);
+}
+
 /**
  * Refreshes a Google access token using the stored refresh token.
  * Docs: https://developers.google.com/identity/protocols/oauth2/web-server#offline
@@ -69,27 +79,40 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      wellKnown: undefined,
+      issuer: "https://accounts.google.com",
+      httpOptions: {
+        timeout: 10_000,
+      },
       authorization: {
+        url: "https://accounts.google.com/o/oauth2/v2/auth",
         params: {
           scope: GOOGLE_SCOPES,
           access_type: "offline",   // ensures we get a refresh_token
           prompt: "consent",        // force consent so refresh_token is issued even after first login
         },
       },
+      token: "https://oauth2.googleapis.com/token",
+      userinfo: "https://openidconnect.googleapis.com/v1/userinfo",
+      jwks_endpoint: "https://www.googleapis.com/oauth2/v3/certs",
     }),
   ],
   callbacks: {
     /**
      * Personal-use allow-list.
-     * If ALLOWED_EMAIL is set in env, only that address can sign in.
+     * If ALLOWED_EMAIL/ALLOWED_EMAILS is set in env, only those addresses can sign in.
      */
     async signIn({ user }) {
-      const allowed = process.env.ALLOWED_EMAIL?.trim();
-      if (!allowed) return true;
-      const ok = user.email?.toLowerCase() === allowed.toLowerCase();
+      const allowedEmails = getAllowedEmails();
+      if (allowedEmails.length === 0) return true;
+
+      const userEmail = user.email?.toLowerCase();
+      const ok = !!userEmail && allowedEmails.includes(userEmail);
+
       if (!ok) {
         console.warn("[auth] sign-in denied by ALLOWED_EMAIL", {
           attemptedEmail: user.email,
+          allowedEmailCount: allowedEmails.length,
         });
       }
       return ok;

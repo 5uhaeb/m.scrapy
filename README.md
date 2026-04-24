@@ -1,4 +1,4 @@
-﻿# MailBoard
+# MailBoard
 
 A personal inbox dashboard with advanced search, saved filters, domain analytics, and CSV/JSON export — built on the Gmail API.
 
@@ -65,8 +65,9 @@ NEXTAUTH_SECRET=<long random string>
 NEXTAUTH_URL=http://localhost:3000
 DATABASE_URL="postgresql://user:pass@host-pooler.neon.tech/neondb?sslmode=require"
 
-# Optional: lock sign-in to a single email for personal use
-ALLOWED_EMAIL=you@gmail.com
+# Optional: lock sign-in to specific emails for personal use
+ALLOWED_EMAIL=you@gmail.com,friend@gmail.com
+# ALLOWED_EMAILS also works. Commas, semicolons, spaces, and newlines are accepted.
 ```
 
 The Prisma schema is configured for Neon Postgres. Use the same Neon `DATABASE_URL` locally and in production to avoid database drift.
@@ -87,7 +88,7 @@ MailBoard is one full-stack Next.js app. Deploy the repository as a single Verce
 
 Neon is the production database. Use Neon's pooled connection string, the one with `-pooler` in the hostname. Serverless functions create many short-lived connections, and the pooler keeps those connections manageable.
 
-In Vercel project settings, add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `DATABASE_URL`, and optionally `ALLOWED_EMAIL`. Set `NEXTAUTH_URL` to your Vercel URL with no trailing slash. Set `DATABASE_URL` to the Neon pooled Postgres string. Leave `ALLOWED_EMAIL` blank if you want test users to be able to sign in.
+In Vercel project settings, add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `NEXTAUTH_SECRET`, `NEXTAUTH_URL`, `DATABASE_URL`, and optionally `ALLOWED_EMAIL` or `ALLOWED_EMAILS`. Set `NEXTAUTH_URL` to your Vercel URL with no trailing slash. Set `DATABASE_URL` to the Neon pooled Postgres string. Leave the allowed-email env var blank if you want test users to be able to sign in, or provide a separated list of emails to restrict access.
 
 In Google Cloud Console, configure both redirect URIs on the same OAuth client:
 
